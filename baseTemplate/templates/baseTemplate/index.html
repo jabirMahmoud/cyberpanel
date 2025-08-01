@@ -1,5 +1,6 @@
 {% load i18n %}
 {% get_current_language as LANGUAGE_CODE %}
+{% with CP_VERSION="2.4.3" %}
 <!DOCTYPE html>
 <html lang="en" ng-app="CyberCP">
 <head>
@@ -8,21 +9,21 @@
     <title>{% block title %}CyberPanel{% endblock %}</title>
     
     {% load static %}
-    <link rel="icon" type="image/x-icon" href="{% static 'baseTemplate/assets/finalBase/favicon.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'baseTemplate/assets/finalBase/favicon.png' %}?v={{ CP_VERSION }}">
     
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/assets/bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/bootstrap-toggle.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/assets/bootstrap/css/bootstrap.min.css' %}?v={{ CP_VERSION }}">
+    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/bootstrap-toggle.min.css' %}?v={{ CP_VERSION }}">
     
     <!-- Core Scripts -->
-    <script src="{% static 'baseTemplate/angularjs.1.6.5.js' %}"></script>
+    <script src="{% static 'baseTemplate/angularjs.1.6.5.js' %}?v={{ CP_VERSION }}"></script>
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <!-- Bootstrap JavaScript -->
 
-    <script src="{% static 'baseTemplate/assets/bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'baseTemplate/bootstrap-toggle.min.js' %}"></script>
+    <script src="{% static 'baseTemplate/assets/bootstrap/js/bootstrap.min.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'baseTemplate/bootstrap-toggle.min.js' %}?v={{ CP_VERSION }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrious/dist/qrious.min.js"></script>
-    <script src="{% static 'baseTemplate/custom-js/system-status.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
+    <script src="{% static 'baseTemplate/custom-js/system-status.js' %}?v={{ CP_VERSION }}"></script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,8 +32,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- PNotify -->
-    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/custom-js/pnotify.custom.min.css' %}">
-    <script src="{% static 'baseTemplate/custom-js/pnotify.custom.min.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'baseTemplate/custom-js/pnotify.custom.min.css' %}?v={{ CP_VERSION }}">
+    <script src="{% static 'baseTemplate/custom-js/pnotify.custom.min.js' %}?v={{ CP_VERSION }}"></script>
     
     <!-- Modern Design System -->
     <style>
@@ -1681,21 +1682,21 @@
     </div>
     
     <!-- Additional Scripts -->
-    <script src="{% static 'packages/packages.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'websiteFunctions/websiteFunctions.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'userManagment/userManagment.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'databases/databases.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'dns/dns.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'mailServer/mailServer.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'ftp/ftp.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'backup/backup.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'managePHP/managePHP.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'serverLogs/serverLogs.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'serverStatus/serverStatus.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'firewall/firewall.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'emailPremium/emailPremium.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'manageServices/manageServices.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
-    <script src="{% static 'CLManager/CLManager.js' %}?v={{ CYBERPANEL_FULL_VERSION }}"></script>
+    <script src="{% static 'packages/packages.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'websiteFunctions/websiteFunctions.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'userManagment/userManagment.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'databases/databases.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'dns/dns.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'mailServer/mailServer.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'ftp/ftp.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'backup/backup.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'managePHP/managePHP.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'serverLogs/serverLogs.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'serverStatus/serverStatus.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'firewall/firewall.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'emailPremium/emailPremium.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'manageServices/manageServices.js' %}?v={{ CP_VERSION }}"></script>
+    <script src="{% static 'CLManager/CLManager.js' %}?v={{ CP_VERSION }}"></script>
     
     <!-- Scripts -->
     <script>
@@ -1863,3 +1864,4 @@
     {% block footer_scripts %}{% endblock %}
 </body>
 </html>
+{% endwith %}

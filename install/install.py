@@ -17,7 +17,7 @@ import secrets
 import install_utils
 
 VERSION = '2.4'
-BUILD = 2
+BUILD = 3
 
 # Using shared char_set from install_utils
 char_set = install_utils.char_set
