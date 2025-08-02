@@ -171,7 +171,7 @@
     }
     
     .panel-header {
-        background: #1e293b;
+        background: var(--console-bg, #1e293b);
         color: var(--bg-primary);
         padding: 1rem 1.5rem;
         display: flex;
@@ -211,7 +211,7 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 0.875rem;
-        color: #94a3b8;
+        color: var(--text-muted, #94a3b8);
     }
     
     .stat-value {
@@ -222,7 +222,7 @@
     .log-controls {
         background: var(--bg-secondary);
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid #e8e9ff;
+        border-bottom: 1px solid var(--border-color, #e8e9ff);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -252,8 +252,8 @@
     
     .search-input:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: var(--accent-color, #667eea);
+        box-shadow: 0 0 0 3px var(--accent-focus, rgba(102, 126, 234, 0.1));
     }
     
     .search-icon {
@@ -261,12 +261,12 @@
         left: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
-        color: #94a3b8;
+        color: var(--text-muted, #94a3b8);
         font-size: 0.875rem;
     }
     
     .log-content {
-        background: #1e293b;
+        background: var(--console-bg, #1e293b);
         padding: 1.5rem;
         min-height: 600px;
         max-height: 700px;
@@ -277,7 +277,7 @@
     .log-textarea {
         width: 100%;
         background: transparent;
-        color: #10b981;
+        color: var(--console-text, #10b981);
         font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
         font-size: 1.125rem;
         line-height: 1.6;
@@ -352,7 +352,7 @@
     .btn-danger:hover {
         background: var(--danger-hover);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        box-shadow: 0 4px 12px var(--danger-shadow, rgba(239, 68, 68, 0.3));
     }
     
     .btn-secondary {
@@ -369,7 +369,7 @@
     .loading-spinner {
         width: 20px;
         height: 20px;
-        border: 2px solid #f3f3f3;
+        border: 2px solid var(--bg-light, #f3f3f3);
         border-top: 2px solid var(--accent-color);
         border-radius: 50%;
         animation: spin 1s linear infinite;
@@ -415,7 +415,7 @@
     
     .empty-icon {
         font-size: 4rem;
-        color: #94a3b8;
+        color: var(--text-muted, #94a3b8);
         margin-bottom: 1rem;
     }
     
@@ -454,7 +454,7 @@
     .log-error { color: var(--danger-accent); }
     .log-warning { color: var(--warning-color); }
     .log-info { color: var(--info-color); }
-    .log-debug { color: #8b5cf6; }
+    .log-debug { color: var(--debug-color, #8b5cf6); }
     .log-success { color: var(--success-accent); }
     
     /* Responsive */
@@ -532,7 +532,7 @@
                     <span class="stat-value">{% trans "Last 50 lines" %}</span>
                 </div>
                 <div ng-hide="logFileLoading" class="stat-item">
-                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    <i class="fas fa-check-circle" style="color: var(--success-accent, #10b981);"></i>
                     <span>{% trans "Live" %}</span>
                 </div>
                 <div ng-show="!logFileLoading" class="loading-spinner"></div>
