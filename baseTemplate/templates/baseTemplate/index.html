@@ -37,6 +37,47 @@
     
     <!-- Modern Design System -->
     <style>
+        /* CSS Variables for Theme */
+        :root {
+            /* Light Theme Colors */
+            --bg-primary: #f0f0ff;
+            --bg-secondary: white;
+            --bg-sidebar: #f3f1ff;
+            --bg-sidebar-item: white;
+            --bg-hover: #f8f9ff;
+            --text-primary: #2f3640;
+            --text-secondary: #94a3b8;
+            --text-heading: #1e293b;
+            --border-color: #e8e9ff;
+            --shadow-color: rgba(0,0,0,0.08);
+            --accent-color: #5856d6;
+            --accent-hover: #4a48c8;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --warning-bg: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            --ai-banner-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        }
+        
+        /* Dark Theme Colors */
+        [data-theme="dark"] {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a3e;
+            --bg-sidebar: #16162e;
+            --bg-sidebar-item: #1e1e42;
+            --bg-hover: #252550;
+            --text-primary: #e4e4e7;
+            --text-secondary: #9ca3af;
+            --text-heading: #f3f4f6;
+            --border-color: #2a2a5e;
+            --shadow-color: rgba(0,0,0,0.3);
+            --accent-color: #7c7ff3;
+            --accent-hover: #6b6ee8;
+            --danger-color: #f87171;
+            --success-color: #34d399;
+            --warning-bg: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+            --ai-banner-bg: linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%);
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -45,25 +86,27 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f0ff;
-            color: #2f3640;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
             min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         /* Header */
         #header {
-            background: white;
+            background: var(--bg-secondary);
             height: 80px;
             display: flex;
             align-items: center;
             padding: 0 30px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px var(--shadow-color);
             position: fixed;
             top: 0;
             left: 260px;
             right: 0;
             z-index: 1000;
+            transition: background-color 0.3s ease;
         }
         
         #header .logo {
@@ -97,12 +140,12 @@
         #header .logo-text .brand {
             font-size: 26px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--text-heading);
         }
         
         #header .logo-text .tagline {
             font-size: 14px;
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-weight: 400;
             margin-top: -2px;
         }
@@ -115,7 +158,7 @@
         }
         
         #header-right .info-text {
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -135,14 +178,14 @@
             align-items: center;
             justify-content: center;
             background: transparent;
-            color: #94a3b8;
+            color: var(--text-secondary);
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 20px;
         }
         
         #header-right .social-links a:hover {
-            background: #5856d6;
+            background: var(--accent-color);
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(88,86,214,0.3);
@@ -150,7 +193,7 @@
         
         #header-right .logout-btn {
             background: transparent;
-            color: #5856d6;
+            color: var(--accent-color);
             border: none;
             padding: 10px 24px;
             border-radius: 12px;
@@ -165,9 +208,37 @@
         }
         
         #header-right .logout-btn:hover {
-            background: #5856d6;
+            background: var(--accent-color);
             color: white;
             box-shadow: 0 5px 15px rgba(88,86,214,0.3);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(88,86,214,0.3);
+        }
+        
+        [data-theme="dark"] .theme-toggle {
+            color: #fbbf24;
         }
         
         /* Sidebar */
@@ -360,7 +431,7 @@
         }
         
         #sidebar .menu-item.active {
-            background: #5856d6;
+            background: var(--accent-color);
             color: white;
             box-shadow: 0 3px 10px rgba(88,86,214,0.3);
         }
@@ -437,7 +508,7 @@
             font-size: 14px;
             gap: 8px;
             margin-bottom: 8px;
-            background: white;
+            background: var(--bg-sidebar-item);
             margin-right: 0;
             margin-left: 0;
         }
@@ -468,13 +539,13 @@
         
         /* Active submenu item */
         #sidebar .submenu .menu-item.active {
-            background: #5856d6;
+            background: var(--accent-color);
             color: white;
             box-shadow: 0 2px 8px rgba(88,86,214,0.2);
         }
         
         #sidebar .submenu .menu-item.active:hover {
-            background: #4a48c8;
+            background: var(--accent-hover);
         }
         
         /* Parent menu item with active child */
@@ -496,6 +567,8 @@
             margin-left: 260px;
             padding: 110px 30px 30px;
             min-height: 100vh;
+            background: var(--bg-primary);
+            transition: background-color 0.3s ease;
         }
         
         /* Notification Banner */
@@ -896,6 +969,9 @@
                     <i class="fab fa-twitter"></i>
                 </a>
             </div>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
             <a href="{% url 'logout' %}" class="logout-btn">
                 <i class="fas fa-arrow-right-from-bracket"></i>
                 Logout
@@ -1859,6 +1935,46 @@
                 }
             });
         }
+    </script>
+    
+    <!-- Dark Mode Toggle Script -->
+    <script>
+        // Theme switching functionality
+        (function() {
+            // Get saved theme from localStorage or default to light
+            const savedTheme = localStorage.getItem('cyberPanelTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Update icon based on current theme
+            const updateThemeIcon = (theme) => {
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            };
+            
+            // Initialize icon
+            updateThemeIcon(savedTheme);
+            
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    // Update theme
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('cyberPanelTheme', newTheme);
+                    
+                    // Update icon
+                    updateThemeIcon(newTheme);
+                    
+                    // Dispatch custom event for any components that need to react to theme change
+                    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+                });
+            }
+        })();
     </script>
     
     {% block footer_scripts %}{% endblock %}
