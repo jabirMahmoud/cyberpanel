@@ -2160,8 +2160,8 @@ milter_default_action = accept
             if os.path.exists('/usr/bin/php'):
                 os.remove('/usr/bin/php')
 
-            # Create symlink to PHP 8.0
-            command = 'ln -s /usr/local/lsws/lsphp80/bin/php /usr/bin/php'
+            # Create symlink to PHP 8.1
+            command = 'ln -s /usr/local/lsws/lsphp81/bin/php /usr/bin/php'
             preFlightsChecks.call(command, self.distro, command, command, 1, 0, os.EX_OSERR)
 
             logging.InstallLog.writeToFile("[setupPHPSymlink] PHP symlink created successfully.")

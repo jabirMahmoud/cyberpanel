@@ -3602,8 +3602,8 @@ pm.max_spare_servers = 3
             if os.path.exists('/usr/bin/php'):
                 os.remove('/usr/bin/php')
 
-            # Create symlink to PHP 8.0
-            command = 'ln -s /usr/local/lsws/lsphp80/bin/php /usr/bin/php'
+            # Create symlink to PHP 8.1
+            command = 'ln -s /usr/local/lsws/lsphp81/bin/php /usr/bin/php'
             Upgrade.executioner(command, 'Setup PHP Symlink', 0)
 
             Upgrade.stdOut("PHP symlink created successfully.")
