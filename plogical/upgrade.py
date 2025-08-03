@@ -93,8 +93,7 @@ class Upgrade:
                     data.find('9.4') > -1 or data.find('9.3') > -1 or data.find('Shamrock Pampas') > -1 or data.find(
                     'Seafoam Ocelot') > -1 or data.find('VERSION="9.') > -1):
                 return 'al-93'
-        else:
-            return -1
+        return None
 
     @staticmethod
     def decideCentosVersion():
@@ -1360,12 +1359,13 @@ CREATE TABLE `websiteFunctions_backupsv2` (`id` integer AUTO_INCREMENT NOT NULL 
 
             try:
                 clAPVersion = Upgrade.FetchCloudLinuxAlmaVersionVersion()
-                type = clAPVersion.split('-')[0]
-                version = int(clAPVersion.split('-')[1])
+                if isinstance(clAPVersion, str) and '-' in clAPVersion:
+                    type = clAPVersion.split('-')[0]
+                    version = int(clAPVersion.split('-')[1])
 
-                if type == 'al' and version >= 90:
-                    command = "sed -i 's/MYSQLCrypt md5/MYSQLCrypt crypt/g' /etc/pure-ftpd/pureftpd-mysql.conf"
-                    Upgrade.executioner(command, command, 0)
+                    if type == 'al' and version >= 90:
+                        command = "sed -i 's/MYSQLCrypt md5/MYSQLCrypt crypt/g' /etc/pure-ftpd/pureftpd-mysql.conf"
+                        Upgrade.executioner(command, command, 0)
             except:
                 pass
 
