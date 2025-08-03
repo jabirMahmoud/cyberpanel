@@ -2984,9 +2984,13 @@ echo $oConfig->Save() ? 'Done' : 'Error';
 
             dovecotConf = '/etc/dovecot/dovecot.conf'
 
-            dovecotContent = open(dovecotConf, 'r').read()
+            try:
+                dovecotContent = open(dovecotConf, 'r').read()
+            except Exception as e:
+                Upgrade.stdOut(f"Error reading dovecot config: {str(e)}")
+                dovecotContent = ""
 
-            if dovecotContent.find('service stats') == -1:
+            if dovecotContent and dovecotContent.find('service stats') == -1:
                 writeToFile = open(dovecotConf, 'a')
 
                 content = """\nservice stats {
@@ -3006,18 +3010,23 @@ echo $oConfig->Save() ? 'Done' : 'Error';
                 writeToFile.close()
 
             # Fix mailbox auto-creation issue
-            if dovecotContent.find('lda_mailbox_autocreate') == -1:
+            if dovecotContent and dovecotContent.find('lda_mailbox_autocreate') == -1:
                 Upgrade.stdOut("Enabling mailbox auto-creation in dovecot...")
                 
                 # Add mailbox auto-creation settings to protocol lda section
-                dovecotContent = open(dovecotConf, 'r').read()
+                try:
+                    dovecotContent = open(dovecotConf, 'r').read()
+                except Exception as e:
+                    Upgrade.stdOut(f"Error reading dovecot config: {str(e)}")
+                    dovecotContent = ""
                 
-                if dovecotContent.find('protocol lda') > -1:
+                if dovecotContent and dovecotContent.find('protocol lda') > -1:
                     # Update existing protocol lda section
                     import re
                     pattern = r'(protocol lda\s*{[^}]*)'
                     replacement = r'\1\n    lda_mailbox_autocreate = yes\n    lda_mailbox_autosubscribe = yes'
-                    dovecotContent = re.sub(pattern, replacement, dovecotContent)
+                    if isinstance(dovecotContent, str):
+                        dovecotContent = re.sub(pattern, replacement, dovecotContent)
                     
                     writeToFile = open(dovecotConf, 'w')
                     writeToFile.write(dovecotContent)
@@ -4563,12 +4572,15 @@ RewriteRule ^(.*)$ https://proxyApacheBackendSSL/$1 [P,L]
                             
                             # Use a simpler approach - find and replace the section
                             import re
-                            new_content = re.sub(
-                                r'rewrite\s*{[^}]+}',
-                                correct_rewrite,
-                                vhost_content,
-                                count=1
-                            )
+                            if isinstance(vhost_content, str) and vhost_content:
+                                new_content = re.sub(
+                                    r'rewrite\s*{[^}]+}',
+                                    correct_rewrite,
+                                    vhost_content,
+                                    count=1
+                                )
+                            else:
+                                new_content = vhost_content
                             
                             if new_content != vhost_content:
                                 with open(ols_vhost_path, 'w') as f:
