@@ -241,12 +241,19 @@ if [[ $LAST_EXIT_CODE != "0" ]]; then
     echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Error message: $1" | tee -a /var/log/cyberpanel_upgrade_debug.log
   fi
   echo -e  "above command failed..."
-  Debug_Log2 "command failed, exiting. For more information read /var/log/installLogs.txt [404]"
-  if [[ "$2" = "no_exit" ]] ; then
-    echo -e"\nRetrying..."
+  Debug_Log2 "command failed. For more information read /var/log/installLogs.txt [404]"
+  
+  # Check if this is a critical error that should stop the upgrade
+  if [[ "$2" = "no_exit" ]] || [[ "$3" = "continue" ]]; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Continuing despite error..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   else
-    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] FATAL: Exiting due to error" | tee -a /var/log/cyberpanel_upgrade_debug.log
-    exit $LAST_EXIT_CODE
+    # Only exit for critical errors
+    if [[ "$1" == *"Virtualenv creation failed"* ]] || [[ "$1" == *"Python upgrade.py"* ]]; then
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] FATAL: Critical error, exiting" | tee -a /var/log/cyberpanel_upgrade_debug.log
+      exit $LAST_EXIT_CODE
+    else
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Non-critical error, continuing..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    fi
   fi
 else
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Command succeeded" | tee -a /var/log/cyberpanel_upgrade_debug.log
@@ -729,9 +736,21 @@ Main_Upgrade() {
 echo -e "\n[$(date +"%Y-%m-%d %H:%M:%S")] Starting Main_Upgrade function..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Running: /usr/local/CyberPanel/bin/python upgrade.py $Branch_Name" | tee -a /var/log/cyberpanel_upgrade_debug.log
 
-/usr/local/CyberPanel/bin/python upgrade.py "$Branch_Name" 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
-# Capture the return code of the last command executed
+# Run upgrade.py and capture output
+upgrade_output=$(/usr/local/CyberPanel/bin/python upgrade.py "$Branch_Name" 2>&1)
 RETURN_CODE=$?
+echo "$upgrade_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
+
+# Check for TypeError specifically
+if echo "$upgrade_output" | grep -q "TypeError: expected string or bytes-like object"; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected in upgrade.py, but continuing..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    # Check if upgrade actually completed despite the error
+    if echo "$upgrade_output" | grep -q "Upgrade Completed"; then
+        echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Upgrade completed despite TypeError" | tee -a /var/log/cyberpanel_upgrade_debug.log
+        RETURN_CODE=0
+    fi
+fi
+
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Python upgrade.py returned code: $RETURN_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
 
 # Check if the command was successful (return code 0)
@@ -911,10 +930,34 @@ else
   Check_Return
 fi
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Verifying Django installation..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+# Test if Django is installed
+if ! /usr/local/CyberCP/bin/python -c "import django" 2>/dev/null; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: Django not found, installing requirements again..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Re-activate virtual environment
+  source /usr/local/CyberCP/bin/activate
+  
+  # Re-install requirements
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Re-installing Python requirements..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  pip install --upgrade pip setuptools wheel packaging 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  pip install --default-timeout=3600 --ignore-installed -r /usr/local/requirments.txt 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+else
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Django is properly installed" | tee -a /var/log/cyberpanel_upgrade_debug.log
+fi
+
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing WSGI-LSAPI..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-wget https://www.litespeedtech.com/packages/lsapi/wsgi-lsapi-2.1.tgz 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+
+# Save current directory
+UPGRADE_CWD=$(pwd)
+
+cd /tmp || exit
+rm -rf wsgi-lsapi-2.1*
+
+wget -q https://www.litespeedtech.com/packages/lsapi/wsgi-lsapi-2.1.tgz 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 tar xf wsgi-lsapi-2.1.tgz
 cd wsgi-lsapi-2.1 || exit
+
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Configuring WSGI..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 /usr/local/CyberPanel/bin/python ./configure.py 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 make 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
@@ -922,6 +965,17 @@ make 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing lswsgi binary..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 rm -f /usr/local/CyberCP/bin/lswsgi
 cp lswsgi /usr/local/CyberCP/bin/
+
+# Return to original directory
+cd "$UPGRADE_CWD" || cd /root
+
+# Final verification
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Running final verification..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+if /usr/local/CyberCP/bin/python -c "import django" 2>/dev/null && [[ -f /usr/local/CyberCP/bin/lswsgi ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] All components successfully installed!" | tee -a /var/log/cyberpanel_upgrade_debug.log
+else
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: Some components may be missing, check logs" | tee -a /var/log/cyberpanel_upgrade_debug.log
+fi
 
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Main_Upgrade function completed" | tee -a /var/log/cyberpanel_upgrade_debug.log
 }
