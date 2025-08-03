@@ -340,7 +340,10 @@ mysql -uroot -p"$MySQL_Password" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'loca
 }
 
 Pre_Upgrade_Setup_Repository() {
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Pre_Upgrade_Setup_Repository started for OS: $Server_OS" | tee -a /var/log/cyberpanel_upgrade_debug.log
+
 if [[ "$Server_OS" = "CentOS" ]] ; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Setting up CentOS repositories..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   rm -f /etc/yum.repos.d/CyberPanel.repo
   rm -f /etc/yum.repos.d/litespeed.repo
   if [[ "$Server_Country" = "CN" ]] ; then
@@ -464,6 +467,13 @@ EOF
   dnf install python3 -y
   fi
 elif [[ "$Server_OS" = "Ubuntu" ]] ; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Setting up Ubuntu repositories..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Ensure nobody group exists (required for various operations)
+  if ! getent group nobody > /dev/null 2>&1 ; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating 'nobody' group..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    groupadd nobody
+  fi
 
   apt update -y
   export DEBIAN_FRONTEND=noninteractive ; apt-get -o Dpkg::Options::="--force-confold" upgrade -y
@@ -766,19 +776,56 @@ echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Checking CyberCP virtual environment sta
 if [[ -f /usr/local/CyberCP/bin/python2 ]]; then
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Found Python 2 in CyberCP, recreating with Python 3..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   rm -rf /usr/local/CyberCP/bin
-  virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Try to create virtualenv, capture both stdout and stderr
+  virtualenv_output=$(virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1)
   VENV_CODE=$?
+  echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Check if TypeError occurred
+  if echo "$virtualenv_output" | grep -q "TypeError"; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected during virtualenv creation, but checking if environment was created anyway..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    # Check if virtualenv was actually created despite the error
+    if [[ -f /usr/local/CyberCP/bin/activate ]]; then
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully despite TypeError" | tee -a /var/log/cyberpanel_upgrade_debug.log
+      VENV_CODE=0
+    fi
+  fi
+  
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
-  Check_Return
+  
+  if [[ $VENV_CODE -ne 0 ]]; then
+    Check_Return "Virtualenv creation failed"
+  fi
 elif [[ -d /usr/local/CyberCP/bin/ ]]; then
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] CyberCP virtualenv already exists, skipping recreation" | tee -a /var/log/cyberpanel_upgrade_debug.log
   echo -e "\nNo need to re-setup virtualenv at /usr/local/CyberCP...\n"
 else
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating new CyberCP virtual environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-  virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # First ensure the directory exists
+  mkdir -p /usr/local/CyberCP
+  
+  # Try to create virtualenv, capture both stdout and stderr
+  virtualenv_output=$(virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1)
   VENV_CODE=$?
+  echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Check if TypeError occurred
+  if echo "$virtualenv_output" | grep -q "TypeError"; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected during virtualenv creation, but checking if environment was created anyway..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    # Check if virtualenv was actually created despite the error
+    if [[ -f /usr/local/CyberCP/bin/activate ]]; then
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully despite TypeError" | tee -a /var/log/cyberpanel_upgrade_debug.log
+      VENV_CODE=0
+    fi
+  fi
+  
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
-  Check_Return
+  
+  if [[ $VENV_CODE -ne 0 ]]; then
+    Check_Return "Virtualenv creation failed"
+  fi
 fi
 
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old requirements file..." | tee -a /var/log/cyberpanel_upgrade_debug.log
