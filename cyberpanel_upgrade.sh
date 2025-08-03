@@ -486,6 +486,9 @@ elif [[ "$Server_OS" = "Ubuntu" ]] ; then
   export DEBIAN_FRONTEND=noninteractive ; apt-get -o Dpkg::Options::="--force-confold" upgrade -y
 
   if [[ "$Server_OS_Version" = "22" ]] ; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing Ubuntu 22.04 specific packages..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    # Install Python development packages required for virtualenv on Ubuntu 22.04
+    DEBIAN_FRONTEND=noninteractive apt install -y python3-dev python3-venv python3-pip python3-setuptools python3-wheel
     DEBIAN_FRONTEND=noninteractive apt install -y dnsutils net-tools htop telnet libcurl4-gnutls-dev libgnutls28-dev libgcrypt20-dev libattr1 libattr1-dev liblzma-dev libgpgme-dev libcurl4-gnutls-dev libssl-dev nghttp2 libnghttp2-dev idn2 libidn2-dev libidn2-0-dev librtmp-dev libpsl-dev nettle-dev libgnutls28-dev libldap2-dev libgssapi-krb5-2 libk5crypto3 libkrb5-dev libcomerr2 libldap2-dev virtualenv git socat vim unzip zip libmariadb-dev-compat libmariadb-dev
 
   else
@@ -566,10 +569,20 @@ done
 Pre_Upgrade_Required_Components() {
 
 if [ "$Server_OS" = "Ubuntu" ]; then
-#  pip3 install --default-timeout=3600 virtualenv==16.7.9
-#    Check_Return
-rm -rf /usr/local/CyberPanel
-pip3 install --upgrade virtualenv
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Preparing Ubuntu environment for virtualenv..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  rm -rf /usr/local/CyberPanel
+  
+  # For Ubuntu 22.04, ensure we have the latest virtualenv that's compatible
+  if [[ "$Server_OS_Version" = "22" ]]; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Ubuntu 22.04: Installing/upgrading virtualenv with proper dependencies..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    # Remove system virtualenv if it exists to avoid conflicts
+    apt remove -y python3-virtualenv 2>/dev/null || true
+    # Install latest virtualenv via pip
+    pip3 install --upgrade pip setuptools wheel
+    pip3 install --upgrade virtualenv
+  else
+    pip3 install --upgrade virtualenv
+  fi
 else
   rm -rf /usr/local/CyberPanel
   if [ -e /usr/bin/pip3 ]; then
@@ -736,7 +749,17 @@ else
   fi
 
   rm -rf /usr/local/CyberPanelTemp
-  virtualenv -p /usr/bin/python3 --system-site-packages /usr/local/CyberPanelTemp
+  
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating temporary virtual environment for fallback upgrade..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  
+  # Try python3 -m venv first (more reliable on Ubuntu 22.04)
+  if python3 -m venv --system-site-packages /usr/local/CyberPanelTemp 2>/dev/null; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Temporary virtualenv created with python3 -m venv" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  else
+    # Fallback to virtualenv command
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Trying virtualenv command for temporary environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    virtualenv -p /usr/bin/python3 --system-site-packages /usr/local/CyberPanelTemp 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  fi
 
 # shellcheck disable=SC1091
 . /usr/local/CyberPanelTemp/bin/activate
@@ -794,25 +817,59 @@ if [[ $NEEDS_RECREATE -eq 1 ]] || [[ ! -d /usr/local/CyberCP/bin ]]; then
   # First ensure the directory exists
   mkdir -p /usr/local/CyberCP
   
-  # Try to create virtualenv, capture both stdout and stderr
-  virtualenv_output=$(virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1)
+  # For Ubuntu 22.04+, we need to handle virtualenv differently
+  VENV_SUCCESS=0
+  
+  # First try using python3 -m venv (more reliable on Ubuntu 22.04)
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Attempting to create virtual environment using python3 -m venv..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  virtualenv_output=$(python3 -m venv --system-site-packages /usr/local/CyberCP 2>&1)
   VENV_CODE=$?
   echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
   
-  # Check if TypeError occurred
-  if echo "$virtualenv_output" | grep -q "TypeError"; then
-    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected during virtualenv creation, but checking if environment was created anyway..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-    # Check if virtualenv was actually created despite the error
+  if [[ $VENV_CODE -eq 0 ]] && [[ -f /usr/local/CyberCP/bin/activate ]]; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully using python3 -m venv" | tee -a /var/log/cyberpanel_upgrade_debug.log
+    VENV_SUCCESS=1
+  else
+    # If that fails, try virtualenv command
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] python3 -m venv failed, trying virtualenv command..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+    
+    # On Ubuntu 22.04, we need to ensure proper virtualenv installation
+    if [[ "$Server_OS" = "Ubuntu" ]] && [[ "$Server_OS_Version" = "22" ]]; then
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Ubuntu 22.04 detected, ensuring virtualenv is properly installed..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+      pip3 install --upgrade virtualenv 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+    fi
+    
+    virtualenv_output=$(virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1)
+    VENV_CODE=$?
+    echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
+    
+    # Check if TypeError occurred (common on Ubuntu 22.04)
+    if echo "$virtualenv_output" | grep -q "TypeError"; then
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected, attempting workaround..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+      
+      # Try alternative method using explicit system-site-packages
+      virtualenv_output=$(virtualenv --python=/usr/bin/python3 --system-site-packages /usr/local/CyberCP 2>&1)
+      VENV_CODE=$?
+      echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
+    fi
+    
     if [[ -f /usr/local/CyberCP/bin/activate ]]; then
-      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully despite TypeError" | tee -a /var/log/cyberpanel_upgrade_debug.log
+      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully" | tee -a /var/log/cyberpanel_upgrade_debug.log
+      VENV_SUCCESS=1
       VENV_CODE=0
     fi
+  fi
+  
+  if [[ $VENV_SUCCESS -eq 0 ]]; then
+    VENV_CODE=1
   fi
   
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
   
   if [[ $VENV_CODE -ne 0 ]]; then
-    Check_Return "Virtualenv creation failed"
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] FATAL: Virtualenv creation failed with code $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+    echo -e "Virtualenv creation failed. Please check the logs at /var/log/cyberpanel_upgrade_debug.log"
+    exit $VENV_CODE
   fi
 else
   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] CyberCP virtualenv already exists, skipping recreation" | tee -a /var/log/cyberpanel_upgrade_debug.log
