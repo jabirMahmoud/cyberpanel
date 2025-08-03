@@ -16,9 +16,16 @@ Sudo_Test=$(set)
 
 Set_Default_Variables() {
 
-# Initialize debug log
+# Clear old log files
+echo -e "Clearing old log files..."
+rm -f /var/log/cyberpanel_upgrade_debug.log
+rm -f /var/log/installLogs.txt
+rm -f /var/log/upgradeLogs.txt
+
+# Initialize new debug log
 echo -e "\n\n========================================" > /var/log/cyberpanel_upgrade_debug.log
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Starting CyberPanel Upgrade Script" >> /var/log/cyberpanel_upgrade_debug.log
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Old log files have been cleared" >> /var/log/cyberpanel_upgrade_debug.log
 echo -e "========================================\n" >> /var/log/cyberpanel_upgrade_debug.log
 
 #### this is temp code for csf
@@ -764,44 +771,25 @@ rm -rf /usr/local/CyberPanelTemp
 fi
 
 echo -e "\n[$(date +"%Y-%m-%d %H:%M:%S")] Starting post-upgrade cleanup..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old CyberCP virtual environment directories..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 
+# Check if we need to recreate due to Python 2
+NEEDS_RECREATE=0
+if [[ -f /usr/local/CyberCP/bin/python2 ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Found Python 2 in CyberCP, will recreate with Python 3..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  NEEDS_RECREATE=1
+fi
+
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old CyberCP virtual environment directories..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 rm -rf /usr/local/CyberCP/bin
 rm -rf /usr/local/CyberCP/lib
 rm -rf /usr/local/CyberCP/lib64
 rm -rf /usr/local/CyberCP/pyvenv.cfg
 
-echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Checking CyberCP virtual environment status..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Checking CyberCP virtual environment status after cleanup..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 
-if [[ -f /usr/local/CyberCP/bin/python2 ]]; then
-  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Found Python 2 in CyberCP, recreating with Python 3..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-  rm -rf /usr/local/CyberCP/bin
-  
-  # Try to create virtualenv, capture both stdout and stderr
-  virtualenv_output=$(virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1)
-  VENV_CODE=$?
-  echo "$virtualenv_output" | tee -a /var/log/cyberpanel_upgrade_debug.log
-  
-  # Check if TypeError occurred
-  if echo "$virtualenv_output" | grep -q "TypeError"; then
-    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] WARNING: TypeError detected during virtualenv creation, but checking if environment was created anyway..." | tee -a /var/log/cyberpanel_upgrade_debug.log
-    # Check if virtualenv was actually created despite the error
-    if [[ -f /usr/local/CyberCP/bin/activate ]]; then
-      echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtual environment created successfully despite TypeError" | tee -a /var/log/cyberpanel_upgrade_debug.log
-      VENV_CODE=0
-    fi
-  fi
-  
-  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
-  
-  if [[ $VENV_CODE -ne 0 ]]; then
-    Check_Return "Virtualenv creation failed"
-  fi
-elif [[ -d /usr/local/CyberCP/bin/ ]]; then
-  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] CyberCP virtualenv already exists, skipping recreation" | tee -a /var/log/cyberpanel_upgrade_debug.log
-  echo -e "\nNo need to re-setup virtualenv at /usr/local/CyberCP...\n"
-else
-  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating new CyberCP virtual environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+# After removing directories, we always need to recreate
+if [[ $NEEDS_RECREATE -eq 1 ]] || [[ ! -d /usr/local/CyberCP/bin ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating/recreating CyberCP virtual environment with Python 3..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   
   # First ensure the directory exists
   mkdir -p /usr/local/CyberCP
@@ -826,6 +814,9 @@ else
   if [[ $VENV_CODE -ne 0 ]]; then
     Check_Return "Virtualenv creation failed"
   fi
+else
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] CyberCP virtualenv already exists, skipping recreation" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  echo -e "\nNo need to re-setup virtualenv at /usr/local/CyberCP...\n"
 fi
 
 echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old requirements file..." | tee -a /var/log/cyberpanel_upgrade_debug.log

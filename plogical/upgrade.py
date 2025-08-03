@@ -183,6 +183,28 @@ class Upgrade:
             return True
         except:
             return False
+    
+    @staticmethod
+    def executioner_silent(command, component, do_exit=0, shell=False):
+        """Silent version of executioner that suppresses all output"""
+        try:
+            FNULL = open(os.devnull, 'w')
+            count = 0
+            while True:
+                if shell == False:
+                    res = subprocess.call(shlex.split(command), stdout=FNULL, stderr=FNULL)
+                else:
+                    res = subprocess.call(command, stdout=FNULL, stderr=FNULL, shell=True)
+                if res != 0:
+                    count = count + 1
+                    if count == 3:
+                        FNULL.close()
+                        return False
+                else:
+                    FNULL.close()
+                    return True
+        except:
+            return False
 
     @staticmethod
     def updateRepoURL():
@@ -334,17 +356,21 @@ class Upgrade:
             except:
                 pass
 
-            command = 'wget -O /usr/local/CyberCP/public/phpmyadmin.zip https://github.com/usmannasir/cyberpanel/raw/stable/phpmyadmin.zip'
-            Upgrade.executioner(command, 0)
+            Upgrade.stdOut("Installing phpMyAdmin...", 0)
+            
+            command = 'wget -q -O /usr/local/CyberCP/public/phpmyadmin.zip https://github.com/usmannasir/cyberpanel/raw/stable/phpmyadmin.zip'
+            Upgrade.executioner_silent(command, 'Download phpMyAdmin')
 
-            command = 'unzip /usr/local/CyberCP/public/phpmyadmin.zip -d /usr/local/CyberCP/public/'
-            Upgrade.executioner(command, 0)
+            command = 'unzip -q /usr/local/CyberCP/public/phpmyadmin.zip -d /usr/local/CyberCP/public/'
+            Upgrade.executioner_silent(command, 'Extract phpMyAdmin')
 
             command = 'mv /usr/local/CyberCP/public/phpMyAdmin-*-all-languages /usr/local/CyberCP/public/phpmyadmin'
-            subprocess.call(command, shell=True)
+            subprocess.call(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             command = 'rm -f /usr/local/CyberCP/public/phpmyadmin.zip'
-            Upgrade.executioner(command, 0)
+            Upgrade.executioner_silent(command, 'Cleanup phpMyAdmin zip')
+            
+            Upgrade.stdOut("phpMyAdmin installation completed.", 0)
 
             ## Write secret phrase
 
@@ -467,11 +493,13 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
 
             count = 1
 
+            Upgrade.stdOut("Installing SnappyMail...", 0)
+            
             while (1):
-                command = 'wget https://github.com/the-djmaze/snappymail/releases/download/v%s/snappymail-%s.zip' % (
+                command = 'wget -q https://github.com/the-djmaze/snappymail/releases/download/v%s/snappymail-%s.zip' % (
                     Upgrade.SnappyVersion, Upgrade.SnappyVersion)
                 cmd = shlex.split(command)
-                res = subprocess.call(cmd)
+                res = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if res != 0:
                     count = count + 1
                     if count == 3:
@@ -487,10 +515,10 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
                 shutil.rmtree('/usr/local/CyberCP/public/snappymail')
 
             while (1):
-                command = 'unzip snappymail-%s.zip -d /usr/local/CyberCP/public/snappymail' % (Upgrade.SnappyVersion)
+                command = 'unzip -q snappymail-%s.zip -d /usr/local/CyberCP/public/snappymail' % (Upgrade.SnappyVersion)
 
                 cmd = shlex.split(command)
-                res = subprocess.call(cmd)
+                res = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if res != 0:
                     count = count + 1
                     if count == 3:
@@ -511,7 +539,7 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
             while (1):
                 command = 'find . -type d -exec chmod 755 {} \;'
                 cmd = shlex.split(command)
-                res = subprocess.call(cmd)
+                res = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if res != 0:
                     count = count + 1
                     if count == 3:
@@ -526,7 +554,7 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
             while (1):
                 command = 'find . -type f -exec chmod 644 {} \;'
                 cmd = shlex.split(command)
-                res = subprocess.call(cmd)
+                res = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 if res != 0:
                     count = count + 1
                     if count == 3:
@@ -552,13 +580,13 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
             writeToFile.close()
 
             command = "mkdir -p /usr/local/lscp/cyberpanel/rainloop/data/_data_/_default_/configs/"
-            Upgrade.executioner(command, 'mkdir snappymail configs', 0)
+            Upgrade.executioner_silent(command, 'mkdir snappymail configs', 0)
 
-            command = f'wget -O /usr/local/CyberCP/snappymail_cyberpanel.php  https://raw.githubusercontent.com/the-djmaze/snappymail/master/integrations/cyberpanel/install.php'
-            Upgrade.executioner(command, 'verify certificate', 0)
+            command = f'wget -q -O /usr/local/CyberCP/snappymail_cyberpanel.php  https://raw.githubusercontent.com/the-djmaze/snappymail/master/integrations/cyberpanel/install.php'
+            Upgrade.executioner_silent(command, 'verify certificate', 0)
 
             command = f'/usr/local/lsws/lsphp80/bin/php /usr/local/CyberCP/snappymail_cyberpanel.php'
-            Upgrade.executioner(command, 'verify certificate', 0)
+            Upgrade.executioner_silent(command, 'verify certificate', 0)
 
             # labsPath = '/usr/local/lscp/cyberpanel/rainloop/data/_data_/_default_/configs/application.ini'
 
@@ -680,6 +708,8 @@ $cfg['Servers'][$i]['LogoutURL'] = 'phpmyadminsignin.php?logout';
             #             Upgrade.executioner(command, 'verify certificate', 0)
 
             os.chdir(cwd)
+            
+            Upgrade.stdOut("SnappyMail installation completed.", 0)
 
         except BaseException as msg:
             Upgrade.stdOut(str(msg) + " [downoad_and_install_raindloop]", 0)
@@ -2752,10 +2782,10 @@ echo $oConfig->Save() ? 'Done' : 'Error';
             Upgrade.executioner(command, 0)
 
             command = '/usr/local/lsws/lsphp72/bin/php /usr/local/CyberCP/public/snappymail.php'
-            Upgrade.executioner(command, 0)
+            Upgrade.executioner_silent(command, 'Configure SnappyMail')
 
             command = 'chmod 600 /usr/local/CyberCP/public/snappymail.php'
-            Upgrade.executioner(command, 0)
+            Upgrade.executioner_silent(command, 'Secure SnappyMail config')
 
             ###
 
