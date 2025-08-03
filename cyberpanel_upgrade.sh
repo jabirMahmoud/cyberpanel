@@ -16,6 +16,10 @@ Sudo_Test=$(set)
 
 Set_Default_Variables() {
 
+# Initialize debug log
+echo -e "\n\n========================================" > /var/log/cyberpanel_upgrade_debug.log
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Starting CyberPanel Upgrade Script" >> /var/log/cyberpanel_upgrade_debug.log
+echo -e "========================================\n" >> /var/log/cyberpanel_upgrade_debug.log
 
 #### this is temp code for csf
 
@@ -222,17 +226,23 @@ fi
 Check_Return() {
   #check previous command result , 0 = ok ,  non-0 = something wrong.
 # shellcheck disable=SC2181
-if [[ $? != "0" ]]; then
+local LAST_EXIT_CODE=$?
+if [[ $LAST_EXIT_CODE != "0" ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] ERROR: Command failed with exit code: $LAST_EXIT_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
   if [[ -n "$1" ]] ; then
     echo -e "\n\n\n$1"
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Error message: $1" | tee -a /var/log/cyberpanel_upgrade_debug.log
   fi
   echo -e  "above command failed..."
   Debug_Log2 "command failed, exiting. For more information read /var/log/installLogs.txt [404]"
   if [[ "$2" = "no_exit" ]] ; then
     echo -e"\nRetrying..."
   else
-    exit
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] FATAL: Exiting due to error" | tee -a /var/log/cyberpanel_upgrade_debug.log
+    exit $LAST_EXIT_CODE
   fi
+else
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Command succeeded" | tee -a /var/log/cyberpanel_upgrade_debug.log
 fi
 }
 # check command success or not
@@ -512,14 +522,18 @@ fi
 }
 
 Download_Requirement() {
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Starting Download_Requirement function..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 for i in {1..50};
   do
   if [[ "$Server_OS_Version" = "22" ]] || [[ "$Server_OS_Version" = "9" ]]; then
-   wget -O /usr/local/requirments.txt "${Git_Content_URL}/${Branch_Name}/requirments.txt"
+   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Downloading requirements.txt for OS version $Server_OS_Version" | tee -a /var/log/cyberpanel_upgrade_debug.log
+   wget -O /usr/local/requirments.txt "${Git_Content_URL}/${Branch_Name}/requirments.txt" 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
   else
-   wget -O /usr/local/requirments.txt "${Git_Content_URL}/${Branch_Name}/requirments-old.txt"
+   echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Downloading requirements-old.txt for OS version $Server_OS_Version" | tee -a /var/log/cyberpanel_upgrade_debug.log
+   wget -O /usr/local/requirments.txt "${Git_Content_URL}/${Branch_Name}/requirments-old.txt" 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
   fi
   if grep -q "Django==" /usr/local/requirments.txt ; then
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Requirements file downloaded successfully" | tee -a /var/log/cyberpanel_upgrade_debug.log
     break
   else
     echo -e "\n Requirement list has failed to download for $i times..."
@@ -682,14 +696,20 @@ Pre_Upgrade_Branch_Input() {
 }
 
 Main_Upgrade() {
-/usr/local/CyberPanel/bin/python upgrade.py "$Branch_Name"
+echo -e "\n[$(date +"%Y-%m-%d %H:%M:%S")] Starting Main_Upgrade function..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Running: /usr/local/CyberPanel/bin/python upgrade.py $Branch_Name" | tee -a /var/log/cyberpanel_upgrade_debug.log
+
+/usr/local/CyberPanel/bin/python upgrade.py "$Branch_Name" 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 # Capture the return code of the last command executed
 RETURN_CODE=$?
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Python upgrade.py returned code: $RETURN_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
 
 # Check if the command was successful (return code 0)
 if [ $RETURN_CODE -eq 0 ]; then
     echo "Upgrade successful."
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] First upgrade attempt successful" | tee -a /var/log/cyberpanel_upgrade_debug.log
 else
+    echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] First upgrade attempt failed with code $RETURN_CODE, starting fallback..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 
 
     if [ -e /usr/bin/pip3 ]; then
@@ -722,58 +742,93 @@ elif [[ "$Server_OS" = "openEuler" ]] ; then
     Check_Return
 fi
 
-/usr/local/CyberPanelTemp/bin/python upgrade.py "$Branch_Name"
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Running fallback: /usr/local/CyberPanelTemp/bin/python upgrade.py $Branch_Name" | tee -a /var/log/cyberpanel_upgrade_debug.log
+/usr/local/CyberPanelTemp/bin/python upgrade.py "$Branch_Name" 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+FALLBACK_CODE=$?
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Fallback upgrade returned code: $FALLBACK_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
 Check_Return
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing temporary environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 rm -rf /usr/local/CyberPanelTemp
 
 fi
 
+echo -e "\n[$(date +"%Y-%m-%d %H:%M:%S")] Starting post-upgrade cleanup..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old CyberCP virtual environment directories..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 
 rm -rf /usr/local/CyberCP/bin
 rm -rf /usr/local/CyberCP/lib
 rm -rf /usr/local/CyberCP/lib64
 rm -rf /usr/local/CyberCP/pyvenv.cfg
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Checking CyberCP virtual environment status..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+
 if [[ -f /usr/local/CyberCP/bin/python2 ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Found Python 2 in CyberCP, recreating with Python 3..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   rm -rf /usr/local/CyberCP/bin
-  virtualenv -p /usr/bin/python3 /usr/local/CyberCP
-    Check_Return
+  virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  VENV_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
 elif [[ -d /usr/local/CyberCP/bin/ ]]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] CyberCP virtualenv already exists, skipping recreation" | tee -a /var/log/cyberpanel_upgrade_debug.log
   echo -e "\nNo need to re-setup virtualenv at /usr/local/CyberCP...\n"
 else
-  virtualenv -p /usr/bin/python3 /usr/local/CyberCP
-    Check_Return
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Creating new CyberCP virtual environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  virtualenv -p /usr/bin/python3 /usr/local/CyberCP 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  VENV_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Virtualenv creation returned code: $VENV_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
 fi
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Removing old requirements file..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 rm -f /usr/local/requirments.txt
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Downloading new requirements..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 Download_Requirement
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing Python packages..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 if [ "$Server_OS" = "Ubuntu" ]; then
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Ubuntu detected, activating virtual environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   # shellcheck disable=SC1091
-  . /usr/local/CyberCP/bin/activate
-    Check_Return
-  pip install --upgrade setuptools packaging
-  pip3 install --default-timeout=3600 --ignore-installed -r /usr/local/requirments.txt
-    Check_Return
+  . /usr/local/CyberCP/bin/activate 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  ACTIVATE_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Activate returned code: $ACTIVATE_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Upgrading setuptools and packaging..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  pip install --upgrade setuptools packaging 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing requirements..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  pip3 install --default-timeout=3600 --ignore-installed -r /usr/local/requirments.txt 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  PIP_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Pip install returned code: $PIP_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
 else
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Non-Ubuntu OS, activating virtual environment..." | tee -a /var/log/cyberpanel_upgrade_debug.log
   # shellcheck disable=SC1091
-  source /usr/local/CyberCP/bin/activate
-    Check_Return
-  /usr/local/CyberCP/bin/pip3 install --default-timeout=3600 --ignore-installed -r /usr/local/requirments.txt
-    Check_Return
+  source /usr/local/CyberCP/bin/activate 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  ACTIVATE_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Activate returned code: $ACTIVATE_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing requirements..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+  /usr/local/CyberCP/bin/pip3 install --default-timeout=3600 --ignore-installed -r /usr/local/requirments.txt 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+  PIP_CODE=$?
+  echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Pip install returned code: $PIP_CODE" | tee -a /var/log/cyberpanel_upgrade_debug.log
+  Check_Return
 fi
 
-wget https://www.litespeedtech.com/packages/lsapi/wsgi-lsapi-2.1.tgz
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing WSGI-LSAPI..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+wget https://www.litespeedtech.com/packages/lsapi/wsgi-lsapi-2.1.tgz 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 tar xf wsgi-lsapi-2.1.tgz
 cd wsgi-lsapi-2.1 || exit
-/usr/local/CyberPanel/bin/python ./configure.py
-make
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Configuring WSGI..." | tee -a /var/log/cyberpanel_upgrade_debug.log
+/usr/local/CyberPanel/bin/python ./configure.py 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
+make 2>&1 | tee -a /var/log/cyberpanel_upgrade_debug.log
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Installing lswsgi binary..." | tee -a /var/log/cyberpanel_upgrade_debug.log
 rm -f /usr/local/CyberCP/bin/lswsgi
 cp lswsgi /usr/local/CyberCP/bin/
 
+echo -e "[$(date +"%Y-%m-%d %H:%M:%S")] Main_Upgrade function completed" | tee -a /var/log/cyberpanel_upgrade_debug.log
 }
 
 Post_Upgrade_System_Tweak() {
