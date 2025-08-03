@@ -2343,7 +2343,11 @@ CREATE TABLE `websiteFunctions_backupsv2` (`id` integer AUTO_INCREMENT NOT NULL 
                 return 0, 'Failed to execute %s' % (command)
 
             command = 'git status'
-            currentBranch = subprocess.check_output(shlex.split(command)).decode()
+            try:
+                currentBranch = subprocess.check_output(shlex.split(command)).decode()
+            except Exception as e:
+                Upgrade.stdOut(f"Error checking git status: {str(e)}")
+                currentBranch = ""
 
             if currentBranch.find('On branch %s' % (branch)) > -1 and currentBranch.find(
                     'On branch %s-dev' % (branch)) == -1:
@@ -2923,7 +2927,11 @@ echo $oConfig->Save() ? 'Done' : 'Error';
                     if items.password.find('CRYPT') > -1:
                         continue
                     command = 'doveadm pw -p %s' % (items.password)
-                    items.password = subprocess.check_output(shlex.split(command)).decode("utf-8").strip('\n')
+                    try:
+                        items.password = subprocess.check_output(shlex.split(command)).decode("utf-8").strip('\n')
+                    except Exception as e:
+                        Upgrade.stdOut(f"Error hashing password for {items.email}: {str(e)}")
+                        continue
                     items.save()
 
                 command = "systemctl restart dovecot"
@@ -3635,10 +3643,18 @@ pm.max_spare_servers = 3
 
         if os.path.exists(Upgrade.CentOSPath) or os.path.exists(Upgrade.openEulerPath):
             command = 'yum list installed'
-            Upgrade.installedOutput = subprocess.check_output(shlex.split(command)).decode()
+            try:
+                Upgrade.installedOutput = subprocess.check_output(shlex.split(command)).decode()
+            except Exception as e:
+                Upgrade.stdOut(f"Error getting installed packages: {str(e)}")
+                Upgrade.installedOutput = ""
         else:
             command = 'apt list'
-            Upgrade.installedOutput = subprocess.check_output(shlex.split(command)).decode()
+            try:
+                Upgrade.installedOutput = subprocess.check_output(shlex.split(command)).decode()
+            except Exception as e:
+                Upgrade.stdOut(f"Error getting installed packages: {str(e)}")
+                Upgrade.installedOutput = ""
 
         # command = 'systemctl stop cpssh'
         # Upgrade.executioner(command, 'fix csf if there', 0)
@@ -4066,10 +4082,13 @@ extprocessor proxyApacheBackendSSL {
 
                 command = "find /lib/modules/ -type f -name '*quota_v*.ko*'"
 
-
-                if subprocess.check_output(command,shell=True).decode("utf-8").find("quota/") == -1:
-                    command = "sudo apt install linux-image-extra-virtual -y"
-                    Upgrade.executioner(command, command, 0, True)
+                try:
+                    output = subprocess.check_output(command, shell=True)
+                    if output and output.decode("utf-8").find("quota/") == -1:
+                        command = "sudo apt install linux-image-extra-virtual -y"
+                        Upgrade.executioner(command, command, 0, True)
+                except Exception as e:
+                    Upgrade.stdOut(f"Error checking quota modules: {str(e)}")
 
                 if Upgrade.edit_fstab('/', '/') == 0:
                     print("Quotas will not be abled as we are are failed to modify fstab file.")
