@@ -231,11 +231,14 @@
 
 <body>
 <div id="loading">
-    <div class="spinner">
-        <div class="bounce1"></div>
-        <div class="bounce2"></div>
-        <div class="bounce3"></div>
-    </div>
+    <lottie-player 
+        src="/static/animations/loader-main.json" 
+        background="transparent" 
+        speed="1" 
+        style="width: 200px; height: 200px; margin: 0 auto;"
+        loop 
+        autoplay>
+    </lottie-player>
 </div>
 
 <div class>
@@ -291,9 +294,9 @@
         <div class="login-wrapper">
             <form id="loginForm" action="/" class="col-md-8 col-md-offset-2">
                 <h1 class="text-transform-upr text-center panel-body text-bold"
-                    style="padding-bottom: 0px; color: #33CCCC;">
+                    style="padding-bottom: 0px; color: #593dac;">
                     <img class="center-block text-center my-20" src="{% static 'baseTemplate/cyber-panel-logo.svg' %}">
-                    CyberPanel
+                    CPanel
                 </h1>
                 <h4 class="text-muted text-center mb-10">Web Hosting Control Panel</h4>
                 <div class="">

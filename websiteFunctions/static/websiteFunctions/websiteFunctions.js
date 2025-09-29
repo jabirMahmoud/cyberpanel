@@ -1771,7 +1771,7 @@ app.controller('WPsiteHome', function ($scope, $http, $timeout, $compile, $windo
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }
@@ -2331,7 +2331,7 @@ app.controller('RestoreWPBackup', function ($scope, $http, $timeout, $window) {
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }
@@ -4664,7 +4664,7 @@ app.controller('WPsiteHome', function ($scope, $http, $timeout, $compile, $windo
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }
@@ -5429,7 +5429,7 @@ app.controller('RestoreWPBackup', function ($scope, $http, $timeout, $window) {
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }
@@ -8433,7 +8433,7 @@ app.controller('WPsiteHome', function ($scope, $http, $timeout, $compile, $windo
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }
@@ -9317,7 +9317,7 @@ app.controller('RestoreWPBackup', function ($scope, $http, $timeout, $window) {
                 $scope.currentStatus = response.data.currentStatus;
                 
                 // Update status displays with progress
-                var statusHtml = '<i class="fas fa-spinner fa-pulse"></i> ' + response.data.currentStatus;
+                var statusHtml = '<lottie-player src="/static/animations/loader-spinner.json" background="transparent" speed="1" style="width: 20px; height: 20px; display: inline-block;" loop autoplay></lottie-player> ' + response.data.currentStatus;
                 if (response.data.installationProgress) {
                     statusHtml += ' (' + response.data.installationProgress + '%)';
                 }

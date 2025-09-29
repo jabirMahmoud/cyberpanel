@@ -1122,7 +1122,14 @@
             <div class="fm-view-container">
                 <!-- Loading State -->
                 <div class="fm-loading" ng-show="isLoading">
-                    <div class="fm-spinner"></div>
+                    <lottie-player 
+                        src="/static/animations/loader-filemanager.json" 
+                        background="transparent" 
+                        speed="1" 
+                        style="width: 80px; height: 80px;"
+                        loop 
+                        autoplay>
+                    </lottie-player>
                     <p>{% trans "Loading files..." %}</p>
                 </div>
                 

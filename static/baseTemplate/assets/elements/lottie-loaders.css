@@ -1,0 +1,37 @@
+/* Lottie Loader Styles */
+.lottie-loader {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.lottie-loader-small {
+    width: 20px;
+    height: 20px;
+}
+
+.lottie-loader-medium {
+    width: 50px;
+    height: 50px;
+}
+
+.lottie-loader-large {
+    width: 100px;
+    height: 100px;
+}
+
+.lottie-loader-fullscreen {
+    width: 200px;
+    height: 200px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+/* Hide original spinners when Lottie is active */
+.lottie-active .loading-spinner,
+.lottie-active .fm-spinner,
+.lottie-active .fa-spinner {
+    display: none !important;
+}
