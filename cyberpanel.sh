@@ -2264,11 +2264,11 @@ chown -R cyberpanel:cyberpanel /usr/local/CyberCP/lib64 || true
 Pre_Install_Setup_Git_URL() {
 if [[ $Server_Country != "CN" ]] ; then
   Git_User="jabirMahmoud"
-  Git_Content_URL="https://raw.githubusercontent.com/${Git_User}/cyberpanel/master"
+  Git_Content_URL="https://raw.githubusercontent.com/${Git_User}/cyberpanel"
   Git_Clone_URL="https://github.com/${Git_User}/cyberpanel.git"
 else
   Git_User="jabirMahmoud"
-  Git_Content_URL="https://raw.githubusercontent.com/${Git_User}/cyberpanel/master"
+  Git_Content_URL="https://raw.githubusercontent.com/${Git_User}/cyberpanel"
   Git_Clone_URL="https://github.com/${Git_User}/cyberpanel.git"
 fi
 
