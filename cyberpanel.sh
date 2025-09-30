@@ -153,21 +153,20 @@ Server_Provider='Undefined'
 
 Watchdog="On"
 Redis_Hosting="No"
-Temp_Value=$(curl --silent --max-time 30 -4 https://cyberpanel.net/version.txt)
-Panel_Version=${Temp_Value:12:3}
-Panel_Build=${Temp_Value:25:1}
+# Use master branch for custom CyberPanel fork
+Branch_Name="master"
+Panel_Version="2.4"
+Panel_Build="4"
 
-Branch_Name="v${Panel_Version}.${Panel_Build}"
-
-if [[ $Branch_Name = v*.*.* ]] ; then
-  echo -e  "\nBranch name fetched...$Branch_Name"
-  log_info "Branch name fetched: $Branch_Name"
+if [[ $Branch_Name = "master" ]] ; then
+  echo -e  "\nUsing custom CyberPanel branch: $Branch_Name"
+  log_info "Using custom CyberPanel branch: $Branch_Name"
 else
-  echo -e "\nUnable to fetch Branch name..."
+  echo -e "\nUnable to set Branch name..."
   echo -e "\nPlease try again in few moments, if this error still happens, please contact support"
-  log_error "Unable to fetch branch name from version.txt"
+  log_error "Unable to set branch name"
   log_function_end "Set_Default_Variables" 1
-  exit
+  exit 1
 fi
 
 Base_Number="1.9.3"
